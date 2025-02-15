@@ -1,3 +1,7 @@
+import os
+
+os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'
+
 import numpy as np
 import pygame
 
@@ -58,25 +62,62 @@ def initialize_grid(width: int, height: int) -> np.array:
     Returns:
         A numpy array representing the initial grid state.
     """
-    cells = np.zeros((height, width))
+    grid = np.zeros((height, width))
 
-    # Define an initial pattern (an 8-row pattern in this case)
-    initial_pattern = np.array([
-        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
-        [0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
-        [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
-    ])
+    # Класичні патерни гри "Життя"
+    patterns = {
+        "block": np.array([
+            [1, 1],
+            [1, 1]
+        ]),
+        "blinker": np.array([
+            [1, 1, 1]
+        ]),
+        "toad": np.array([
+            [0, 1, 1, 1],
+            [1, 1, 1, 0]
+        ]),
+        "glider": np.array([
+            [0, 1, 0],
+            [0, 0, 1],
+            [1, 1, 1]
+        ]),
+        "beacon": np.array([
+            [1, 1, 0, 0],
+            [1, 1, 0, 0],
+            [0, 0, 1, 1],
+            [0, 0, 1, 1]
+        ]),
+        "lwss": np.array([
+            [0, 1, 0, 0, 1],
+            [1, 0, 0, 0, 0],
+            [1, 0, 0, 0, 1],
+            [1, 1, 1, 1, 0]
+        ])
+    }
 
-    # Place the initial pattern at position (10, 10) in the grid
-    pos = (10, 10)
-    h, w = initial_pattern.shape
-    cells[pos[0]:pos[0] + h, pos[1]:pos[1] + w] = initial_pattern
-    return cells
+    # Позиції для розміщення патернів (рядок, стовпець)
+    positions = {
+        "block": (2, 2),
+        "blinker": (2, 10),
+        "toad": (2, 20),
+        "glider": (10, 2),
+        "beacon": (10, 10),
+        "lwss": (126, 128)
+    }
+
+    # Розміщуємо кожен патерн у заданій позиції сітки
+    for name, pat in patterns.items():
+        pos = positions[name]
+        ph, pw = pat.shape
+        grid[pos[0]:pos[0] + ph, pos[1]:pos[1] + pw] = pat
+
+    # Додаємо випадкові клітини по всій сітці (ймовірність появи 10%)
+    random_cells = (np.random.rand(height, width) < 0.10).astype(int)
+    # Об'єднуємо патерни з випадковими клітинами (якщо в обох є живі клітини – залишається 1)
+    grid = np.maximum(grid, random_cells)
+
+    return grid
 
 
 def main():
@@ -84,7 +125,7 @@ def main():
     pygame.display.set_caption("Game of Life")
 
     # Grid dimensions and cell size
-    width, height, scale = 50, 30, 10
+    width, height, scale = 256, 144, 10
     screen = pygame.display.set_mode((width * scale, height * scale))
 
     cells = initialize_grid(width, height)
@@ -92,7 +133,7 @@ def main():
     running = True
 
     while running:
-        clock.tick(10)  # Set the update speed (10 frames per second)
+        clock.tick(60)  # Set the update speed (60 frames per second)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -110,4 +151,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    exit(0)
