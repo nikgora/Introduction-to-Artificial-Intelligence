@@ -64,7 +64,7 @@ def initialize_grid(width: int, height: int) -> np.array:
     """
     grid = np.zeros((height, width))
 
-    # Класичні патерни гри "Життя"
+    # Classic patterns of the game "Life”
     patterns = {
         "block": np.array([
             [1, 1],
@@ -96,7 +96,7 @@ def initialize_grid(width: int, height: int) -> np.array:
         ])
     }
 
-    # Позиції для розміщення патернів (рядок, стовпець)
+    # Positions to place patterns (row, column)
     positions = {
         "block": (2, 2),
         "blinker": (2, 10),
@@ -106,15 +106,15 @@ def initialize_grid(width: int, height: int) -> np.array:
         "lwss": (126, 128)
     }
 
-    # Розміщуємо кожен патерн у заданій позиції сітки
+    # Place each pattern at a given grid position
     for name, pat in patterns.items():
         pos = positions[name]
         ph, pw = pat.shape
         grid[pos[0]:pos[0] + ph, pos[1]:pos[1] + pw] = pat
 
-    # Додаємо випадкові клітини по всій сітці (ймовірність появи 10%)
+    # Add random cells throughout the grid (10% probability of occurrence)
     random_cells = (np.random.rand(height, width) < 0.10).astype(int)
-    # Об'єднуємо патерни з випадковими клітинами (якщо в обох є живі клітини – залишається 1)
+    # Combine patterns with random cells (if both have live cells, 1 is left)
     grid = np.maximum(grid, random_cells)
 
     return grid
