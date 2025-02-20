@@ -25,16 +25,25 @@ def update_grid(surface: pygame, matrix: np.array, scale: int) -> np.array:
         A new numpy array representing the updated grid state.
     """
     new_matrix = np.zeros(matrix.shape)
+
+    # Count the number of live neighbors for each cell (toroidal grid)
+    neighbor_count = (
+            np.roll(matrix, 1, axis=0) + np.roll(matrix, -1, axis=0) +  # Up and down
+            np.roll(matrix, 1, axis=1) + np.roll(matrix, -1, axis=1) +  # Left and right
+            np.roll(np.roll(matrix, 1, axis=0), 1, axis=1) +  # Upper right
+            np.roll(np.roll(matrix, 1, axis=0), -1, axis=1) +  # Upper left
+            np.roll(np.roll(matrix, -1, axis=0), 1, axis=1) +  # Lower right
+            np.roll(np.roll(matrix, -1, axis=0), -1, axis=1)  # Lower left
+    )
+
     for i, j in np.ndindex(matrix.shape):
-        # Count live neighbors
-        live_neighbors = np.sum(matrix[i - 1:i + 2, j - 1:j + 2]) - matrix[i, j]
+        live_neighbors = neighbor_count[i, j]
 
         if matrix[i, j] == 1:
             # Live cell: dies if underpopulated or overpopulated
             if live_neighbors < 2 or live_neighbors > 3:
                 cell_color = DIE_COLOR
             else:
-                # Cell lives on
                 new_matrix[i, j] = 1
                 cell_color = LIVE_COLOR
         else:
@@ -98,12 +107,12 @@ def initialize_grid(width: int, height: int) -> np.array:
 
     # Positions to place patterns (row, column)
     positions = {
-        "block": (2, 2),
-        "blinker": (2, 10),
+        "block": (20, 2),
+        "blinker": (0, 1),
         "toad": (2, 20),
         "glider": (10, 2),
         "beacon": (10, 10),
-        "lwss": (126, 128)
+        "lwss": (101, 95)
     }
 
     # Place each pattern at a given grid position
@@ -125,7 +134,7 @@ def main():
     pygame.display.set_caption("Game of Life")
 
     # Grid dimensions and cell size
-    width, height, scale = 256, 144, 10
+    width, height, scale = 192, 108, 10
     screen = pygame.display.set_mode((width * scale, height * scale))
 
     cells = initialize_grid(width, height)
