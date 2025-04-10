@@ -86,7 +86,7 @@ class HuntTheWumpus:
             self.game_over = True
             return
 
-        if self.player in self.bats:
+        while self.player in self.bats:
             print("Супер кажани зловили вас і перенесли у випадкову печеру!")
             # Переносимо гравця у випадкову печеру.
             self.player = random.choice(list(self.cave_map.keys()))
@@ -100,6 +100,7 @@ class HuntTheWumpus:
                 print("Ви опинилися у ямі після перенесення – гра завершена!")
                 self.game_over = True
                 return
+
 
     def shoot_arrow(self, path):
         """
